@@ -1,7 +1,13 @@
-import { Issue, CATEGORY_LABELS } from "@/lib/types";
+import { CATEGORY_LABELS } from "@/lib/types";
 import { StatusBadge } from "./StatusBadge";
 import { MapPin, ThumbsUp, Clock, Tag } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { Card, CardContent } from "@/components/ui/card";
+
+interface IssueCardProps {
+  issue: any;
+  onUpvote: (id: string) => void;
+}
 import { Card, CardContent } from "@/components/ui/card";
 
 interface IssueCardProps {
