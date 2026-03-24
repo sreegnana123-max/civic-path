@@ -1,22 +1,37 @@
-import { useState, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Header } from "@/components/Header";
 import { IssueCard } from "@/components/IssueCard";
 import { ReportIssueDialog } from "@/components/ReportIssueDialog";
 import { StatsCards } from "@/components/StatsCards";
 import { getAllIssues, upvoteIssue } from "@/lib/store";
-import { IssueCategory, IssueStatus, CATEGORY_LABELS, STATUS_LABELS } from "@/lib/types";
+import { CATEGORY_LABELS, STATUS_LABELS } from "@/lib/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
-  const [refreshKey, setRefreshKey] = useState(0);
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [issues, setIssues] = useState<any[]>([]);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [search, setSearch] = useState("");
 
-  const issues = getAllIssues();
+  const fetchIssues = useCallback(async () => {
+    try {
+      const data = await getAllIssues();
+      setIssues(data);
+    } catch {
+      toast.error("Failed to load issues");
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchIssues();
+  }, [fetchIssues]);
 
   const filtered = issues.filter((issue) => {
     if (statusFilter !== "all" && issue.status !== statusFilter) return false;
@@ -25,19 +40,24 @@ const Index = () => {
     return true;
   });
 
-  const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
-
-  const handleUpvote = (id: string) => {
-    upvoteIssue(id);
-    toast.success("Upvoted!");
-    refresh();
+  const handleUpvote = async (id: string) => {
+    if (!user) {
+      toast.info("Please sign in to upvote");
+      navigate("/auth");
+      return;
+    }
+    try {
+      await upvoteIssue(id, user.id);
+      await fetchIssues();
+    } catch {
+      toast.error("Failed to upvote");
+    }
   };
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <main className="container max-w-6xl mx-auto px-4 py-8">
-        {/* Hero */}
         <div className="mb-8 animate-slide-up">
           <h1 className="font-heading text-3xl sm:text-4xl font-extrabold text-foreground mb-2 tracking-tight">
             Community Issues
@@ -47,27 +67,18 @@ const Index = () => {
           </p>
         </div>
 
-        {/* Stats */}
         <div className="mb-8">
-          <StatsCards refreshKey={refreshKey} />
+          <StatsCards />
         </div>
 
-        {/* Toolbar */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3 flex-wrap">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                className="pl-9 w-56"
-                placeholder="Search issues..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
+              <Input className="pl-9 w-56" placeholder="Search issues..." value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-36">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
+              <SelectTrigger className="w-36"><SelectValue placeholder="Status" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
                 {Object.entries(STATUS_LABELS).map(([v, l]) => (
@@ -76,9 +87,7 @@ const Index = () => {
               </SelectContent>
             </Select>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-44">
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
+              <SelectTrigger className="w-44"><SelectValue placeholder="Category" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
                 {Object.entries(CATEGORY_LABELS).map(([v, l]) => (
@@ -87,10 +96,9 @@ const Index = () => {
               </SelectContent>
             </Select>
           </div>
-          <ReportIssueDialog onIssueAdded={refresh} />
+          <ReportIssueDialog onIssueAdded={fetchIssues} />
         </div>
 
-        {/* Issues List */}
         <div className="space-y-3">
           {filtered.length === 0 ? (
             <div className="text-center py-16">

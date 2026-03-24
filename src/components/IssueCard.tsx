@@ -1,11 +1,11 @@
-import { Issue, CATEGORY_LABELS } from "@/lib/types";
+import { CATEGORY_LABELS } from "@/lib/types";
 import { StatusBadge } from "./StatusBadge";
 import { MapPin, ThumbsUp, Clock, Tag } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 
 interface IssueCardProps {
-  issue: Issue;
+  issue: any;
   onUpvote: (id: string) => void;
 }
 
@@ -19,7 +19,7 @@ export function IssueCard({ issue, onUpvote }: IssueCardProps) {
               <StatusBadge status={issue.status} />
               <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                 <Tag className="w-3 h-3" />
-                {CATEGORY_LABELS[issue.category]}
+                {CATEGORY_LABELS[issue.category as keyof typeof CATEGORY_LABELS] || issue.category}
               </span>
             </div>
             <h3 className="font-heading font-semibold text-foreground text-base mb-1.5 leading-snug">
@@ -35,7 +35,7 @@ export function IssueCard({ issue, onUpvote }: IssueCardProps) {
               </span>
               <span className="inline-flex items-center gap-1">
                 <Clock className="w-3.5 h-3.5" />
-                {formatDistanceToNow(new Date(issue.createdAt), { addSuffix: true })}
+                {formatDistanceToNow(new Date(issue.created_at), { addSuffix: true })}
               </span>
             </div>
           </div>
