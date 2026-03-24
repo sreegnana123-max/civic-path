@@ -10,7 +10,6 @@ interface IssueCardProps {
 }
 import { Card, CardContent } from "@/components/ui/card";
 
-interface IssueCardProps {
   issue: Issue;
   onUpvote: (id: string) => void;
 }
